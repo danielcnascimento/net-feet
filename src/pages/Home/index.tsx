@@ -45,7 +45,7 @@ const Home = (): JSX.Element => {
     }
 
     loadProducts();
-  }, []);
+  }, [addProduct]);
 
   function handleAddProduct(id: number) {
     addProduct(id);

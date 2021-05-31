@@ -43,35 +43,40 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
        * 5.Catch must have toat message "Error on adding product"
        */
 
-      //This does work - need to check
+      let updatedCart = [...cart]
+      const cartExist = updatedCart.find(cartItem => cartItem.id === productId);
 
-      // let updatedCart = [...cart]
-      // const cartExist = cart.find(cartItem => cartItem.id === productId);
+      if(cartExist){
+        const stock = await api.get<Stock>(`stock/${productId}`);
+        const stockAmount = stock.data.amount;
 
-      // if(cartExist){
-      //   const stock = await api.get<Stock>(`stock/${productId}`);
-      //   const stockAmount = stock.data.amount;
+        if(cartExist.amount >= stockAmount) {
+          toast.error('Quantidade solicitada fora de estoque');
+          return
+        }
 
-      //   if(cartExist.amount > stockAmount) {
-      //     toast.error('Quantidade solicitada fora de estoque');
-      //     return
-      //   }
+        updatedCart.map(cart =>{
+        if(cart.id === productId){
 
-      //   updatedCart = cart.map(cart =>{
-      //   if(cart.id === productId){
+          let updatedAmount = {...cart, amount: cart.amount + 1}
+          return updatedAmount;
+        }
 
-      //     let updatedAmount = {...cart, amount: cart.amount + 1}
-      //     return updatedAmount;
-      //   }
-
-      //   return cart;
-      //   })
-      // } else {
-      //   const product = await api.get<Product>(`products/${productId}`);
-      //   updatedCart.push(product.data)
-      // }
+        return cart;
+        })
+      } else {
+        const product = await api.get<Product>(`products/${productId}`);
+        
+        const newCartItem = {
+          ...product.data,
+          amount: 1
+        }
+        
+        updatedCart.push(newCartItem)
+      }
       
-      // localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+      setCart(updatedCart)
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
     } catch {
       toast.error('Erro na adição do produto');
     }
