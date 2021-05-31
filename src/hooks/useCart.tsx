@@ -42,33 +42,36 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
        *   return a toast to users saying "cant add more, out of stcok!"
        * 5.Catch must have toat message "Error on adding product"
        */
-      let updatedCart = [...cart]
-      const cartExist = cart.find(cartItem => cartItem.id === productId);
 
-      if(cartExist){
-        const stock = await api.get<Stock>(`stock/${productId}`);
-        const stockAmount = stock.data.amount;
+      //This does work - need to check
 
-        if(cartExist.amount > stockAmount) {
-          toast.error('Quantidade solicitada fora de estoque');
-          return
-        }
+      // let updatedCart = [...cart]
+      // const cartExist = cart.find(cartItem => cartItem.id === productId);
 
-        updatedCart = cart.map(cart =>{
-        if(cart.id === productId){
+      // if(cartExist){
+      //   const stock = await api.get<Stock>(`stock/${productId}`);
+      //   const stockAmount = stock.data.amount;
 
-          let updatedAmount = {...cart, amount: cart.amount + 1}
-          return updatedAmount;
-        }
+      //   if(cartExist.amount > stockAmount) {
+      //     toast.error('Quantidade solicitada fora de estoque');
+      //     return
+      //   }
 
-        return cart;
-        })
-      } else {
-        const product = await api.get<Product>(`products/${productId}`);
-        updatedCart.push(product.data)
-      }
+      //   updatedCart = cart.map(cart =>{
+      //   if(cart.id === productId){
+
+      //     let updatedAmount = {...cart, amount: cart.amount + 1}
+      //     return updatedAmount;
+      //   }
+
+      //   return cart;
+      //   })
+      // } else {
+      //   const product = await api.get<Product>(`products/${productId}`);
+      //   updatedCart.push(product.data)
+      // }
       
-      localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+      // localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
     } catch {
       toast.error('Erro na adição do produto');
     }
