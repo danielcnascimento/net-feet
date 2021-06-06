@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { Product, Stock } from '../types';
@@ -27,9 +27,24 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     if (storagedCart) {
       return JSON.parse(storagedCart);
     }
-
     return [];
   });
+
+  const prevCartItemRef = useRef<Product[]>(); // I set the state to a ref to keep watching on my state.
+
+  useEffect(() => {
+    prevCartItemRef.current = cart // I set the state inside the Ref hook. I can't forget the current!
+  })
+
+  // since Ref could retrive "undefined" anytime, I guarantee that the new variabel will not get "undefined" but...
+  // get at least the current state of my cart.
+  const cartPrevValue = prevCartItemRef.current ?? cart;
+
+  useEffect(()=> {
+    if(cartPrevValue !== cart){
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart))
+    }
+  }, [cart, cartPrevValue])
 
   const addProduct = async (productId: number) => {
     try {
@@ -52,7 +67,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       // must get product from api and add amount = 1 to create this item in cart.
       if(productExists){
         productExists.amount = amount
-        console.log(productExists.amount);
         
       } else {
         const newItem = await api.get(`/products/${productId}`);
@@ -65,8 +79,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         updatedCart.push(newItemAmount);
       }
       // perpetuating item in cart by setting on state and saving item on localStorage.
-      setCart(updatedCart)
-      localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+      setCart(updatedCart);
     } catch {
       toast.error('Erro na adição do produto'); // if any error occur during api checking, retuns new message to users.
     }
@@ -78,15 +91,14 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
       const removeItem = updatedCart.findIndex(product => product.id === productId);
 
-      if(removeItem >0) {
+      if(removeItem >= 0) {
         updatedCart.splice(removeItem, 1);
         setCart(updatedCart);
-        localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
       } else {
         throw Error()
       }
     } catch {
-      
+      toast.error('Erro na remoção do produto'); // if any error occur during api checking, retuns new message to users.
     }
   };
 
@@ -95,9 +107,31 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
-      // TODO
+      if(amount <= 0) {
+        return; 
+      }
+      
+      const stock = await api.get(`/stock/${productId}`);
+      const stockProdAmount = stock.data.amount;
+      
+      if(amount > stockProdAmount) {
+        toast.error('Quantidade solicitada fora de estoque');
+        return;
+      } 
+
+      const updatedCart = [...cart];
+
+      const productExists = updatedCart.find(prod => prod.id === productId);
+
+      if(productExists){
+        productExists.amount = amount;
+        setCart(updatedCart);
+      } else {
+        throw Error()
+      }
+
     } catch {
-      // TODO
+      toast.error('Erro na alteração de quantidade do produto');
     }
   };
 
