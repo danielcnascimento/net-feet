@@ -33,20 +33,23 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const addProduct = async (productId: number) => {
     try {
-      const updatedCart = [...cart];
-      const productExists = updatedCart.find(prod => prod.id === productId);
+      const updatedCart = [...cart]; // imutabilit using original cart
+      const productExists = updatedCart.find(prod => prod.id === productId); // get the obj and change it.
 
       const stock = await api.get(`/stock/${productId}`);
       
       const stockProdAmount = stock.data.amount;
-      const currentAmount = productExists ? productExists.amount : 0;
+      const currentAmount = productExists ? productExists.amount : 0; // check if the obj exists on the returned obj.
       const amount = currentAmount + 1;
 
+      // if fails on this checking, thus should return a message saying out of stock.
       if(amount > stockProdAmount) {
         toast.error('Quantidade solicitada fora de estoque');
         return;
       }
 
+      // we will check if the product exists on cart, if so: must update the amount, else:
+      // must get product from api and add amount = 1 to create this item in cart.
       if(productExists){
         productExists.amount = amount
         console.log(productExists.amount);
@@ -61,20 +64,29 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
         updatedCart.push(newItemAmount);
       }
- 
+      // perpetuating item in cart by setting on state and saving item on localStorage.
       setCart(updatedCart)
-
       localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
     } catch {
-      toast.error('Erro na adição do produto');
+      toast.error('Erro na adição do produto'); // if any error occur during api checking, retuns new message to users.
     }
   };
 
   const removeProduct = (productId: number) => {
     try {
-      // TODO
+      const updatedCart = [...cart];
+
+      const removeItem = updatedCart.findIndex(product => product.id === productId);
+
+      if(removeItem >0) {
+        updatedCart.splice(removeItem, 1);
+        setCart(updatedCart);
+        localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart))
+      } else {
+        throw Error()
+      }
     } catch {
-      // TODO
+      
     }
   };
 
